@@ -26,7 +26,7 @@ namespace iroha {
             std::unique_ptr<proto::OnDemandOrdering::StubInterface> stub,
             std::chrono::milliseconds timeout);
 
-        // OnDemandOrderingService
+        // OdOsNotification
 
         void onTransactions(CollectionType &&transactions) override;
 
