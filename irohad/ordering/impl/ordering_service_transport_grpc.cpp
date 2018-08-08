@@ -47,8 +47,9 @@ void OrderingServiceTransportGrpc::publishProposal(
     std::unique_ptr<shared_model::interface::Proposal> proposal,
     const std::vector<std::string> &peers) {
   log_->info("OrderingServiceTransportGrpc::publishProposal");
-  std::unordered_map<std::string,
-                     std::unique_ptr<proto::OrderingGateTransportGrpc::Stub>>
+  std::unordered_map<
+      std::string,
+      std::unique_ptr<proto::OrderingGateTransportGrpc::StubInterface>>
       peers_map;
   for (const auto &peer : peers) {
     peers_map[peer] =
