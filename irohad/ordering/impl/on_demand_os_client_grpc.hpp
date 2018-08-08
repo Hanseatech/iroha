@@ -22,8 +22,12 @@ namespace iroha {
           : public OdOsNotification,
             private network::AsyncGrpcClient<google::protobuf::Empty> {
        public:
+        using TimepointType = std::chrono::system_clock::time_point;
+        using TimeoutType = std::chrono::milliseconds;
+
         OnDemandOsClientGrpc(
             std::unique_ptr<proto::OnDemandOrdering::StubInterface> stub,
+            std::function<TimepointType()> time_provider,
             std::chrono::milliseconds timeout);
 
         // OdOsNotification
@@ -36,17 +40,21 @@ namespace iroha {
        private:
         logger::Logger log_;
         std::unique_ptr<proto::OnDemandOrdering::StubInterface> stub_;
+        std::function<TimepointType()> time_provider_;
         std::chrono::milliseconds timeout_;
       };
 
       class OnDemandOsClientGrpcFactory : public OdOsNotificationFactory {
        public:
-        OnDemandOsClientGrpcFactory(std::chrono::milliseconds timeout);
+        OnDemandOsClientGrpcFactory(
+            std::function<OnDemandOsClientGrpc::TimepointType()> time_provider,
+            OnDemandOsClientGrpc::TimeoutType timeout);
 
         std::unique_ptr<OdOsNotification> create(
             const shared_model::interface::Peer &to) override;
 
        private:
+        std::function<OnDemandOsClientGrpc::TimepointType()> time_provider_;
         std::chrono::milliseconds timeout_;
       };
 

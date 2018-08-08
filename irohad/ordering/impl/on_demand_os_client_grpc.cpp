@@ -12,11 +12,13 @@ using namespace iroha::ordering::transport;
 
 OnDemandOsClientGrpc::OnDemandOsClientGrpc(
     std::unique_ptr<proto::OnDemandOrdering::StubInterface> stub,
+    std::function<TimepointType()> time_provider,
     std::chrono::milliseconds timeout)
     : network::AsyncGrpcClient<google::protobuf::Empty>(
           logger::log("OnDemandOsClientGrpc")),
       log_(logger::log("OnDemandOsClientGrpc")),
       stub_(std::move(stub)),
+      time_provider_(std::move(time_provider)),
       timeout_(timeout) {}
 
 // OnDemandOrderingService
@@ -40,7 +42,7 @@ void OnDemandOsClientGrpc::onTransactions(CollectionType &&transactions) {
 boost::optional<OdOsNotification::ProposalType>
 OnDemandOsClientGrpc::onRequestProposal(transport::RoundType round) {
   grpc::ClientContext context;
-  context.set_deadline(std::chrono::system_clock::now() + timeout_);
+  context.set_deadline(time_provider_() + timeout_);
   proto::ProposalRequest request;
   request.set_block_round(round.first);
   request.set_reject_round(round.second);
@@ -58,11 +60,14 @@ OnDemandOsClientGrpc::onRequestProposal(transport::RoundType round) {
 }
 
 OnDemandOsClientGrpcFactory::OnDemandOsClientGrpcFactory(
-    std::chrono::milliseconds timeout)
-    : timeout_(timeout) {}
+    std::function<OnDemandOsClientGrpc::TimepointType()> time_provider,
+    OnDemandOsClientGrpc::TimeoutType timeout)
+    : time_provider_(time_provider), timeout_(timeout) {}
 
 std::unique_ptr<OdOsNotification> OnDemandOsClientGrpcFactory::create(
     const shared_model::interface::Peer &to) {
   return std::make_unique<OnDemandOsClientGrpc>(
-      network::createClient<proto::OnDemandOrdering>(to.address()), timeout_);
+      network::createClient<proto::OnDemandOrdering>(to.address()),
+      time_provider_,
+      timeout_);
 }
